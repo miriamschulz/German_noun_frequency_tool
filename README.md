@@ -9,7 +9,7 @@ Search criteria can be interactively adjusted while executing the program.
 The program was designed to help in the construction of psycholinguistic stimuli that require several target words of comparable frequency, length, gender, etc.
 
 USAGE:
-`python target_search_interactive.py `
+`python german_noun_frequency_tool.py `
 
 ## Requirements
 
