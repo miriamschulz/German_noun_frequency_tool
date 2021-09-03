@@ -61,16 +61,20 @@ def search_by_target():
     target_word = check_quit(input().strip())
     target_freq = get_target_freq(target_word)
     t_genders, t_cases, t_nums = get_target_morph(target_word)
-    print('\nChosen target: \'{}\' Frequency rank: {} per million. Possible genders: {}'\
-          .format(target_word, target_freq, ', '.join(t_genders)))
+    print('\n\tChosen target: \'{}\''.format(target_word))
+    print('\tFrequency rank: {} per million'.format(target_freq))
+    print('\tPossible genders: {}'.format(', '.join(t_genders)))
 
     # Define search defaults
     length_diff = 2
     cases = ['dat', 'acc']
-    numerus = 'sing'
+    numerus = ['sing']
 
     # Customize search
-    genders, cases, numerus, length_diff = search_customization(t_genders, cases, numerus, length_diff)
+    genders, cases, numerus, length_diff = search_customization(t_genders,
+                                                                cases,
+                                                                numerus,
+                                                                length_diff)
 
     length_min = max(1, len(target_word) - length_diff)
     length_max = len(target_word) + length_diff
@@ -78,7 +82,9 @@ def search_by_target():
     # Search for similar targets
     main_search(target_freq, length_min, length_max, genders, cases, numerus)
 
-    print('Run new Search-by-Target: Press Enter. Switch to Search-by-Frequency: Press \'2\'. (To exit, type \'quit\'.)')
+    print('\nRun new Search-by-Target: Press Enter. '
+          'Switch to Search-by-Frequency: Press \'2\'. '
+          '(To exit, type \'quit\'.)')
     continue_input = check_quit(input().strip().lower())
     flag = True
     while True:
@@ -102,7 +108,8 @@ def search_by_freq():
 
     print('Currently in MODE 2: Search-by-Frequency'.upper())
     print('\nTo exit the program, type \'quit\' at any time.')
-    print('\nPlease enter a number (int or float) for the desired search frequency (per million):')
+    print('\nPlease enter a number (int or float) for the desired '
+          'search frequency (per million):')
     search_freq = check_quit(input().strip())
 
     # Check if the input can be converted to a float, otherwise retry:
@@ -123,7 +130,10 @@ def search_by_freq():
     length_min = 1
     length_max = 100
 
-    genders, cases, numerus, length_diff = search_customization(genders, cases, numerus, length_diff)
+    genders, cases, numerus, length_diff = search_customization(genders,
+                                                                cases,
+                                                                numerus,
+                                                                length_diff)
 
     if length_diff != None:
         length_min = length_diff
@@ -131,7 +141,9 @@ def search_by_freq():
 
     main_search(search_freq, length_min, length_max, genders, cases, numerus)
 
-    print('Run new Search-by-Frequency: Press Enter. Switch to Search-by-Target: Press \'1\'. (To exit, type \'quit\'.)')
+    print('\nRun new Search-by-Frequency: Press Enter. '
+          'Switch to Search-by-Target: Press \'1\'. '
+          '(To exit, type \'quit\'.)')
     continue_input = check_quit(input().strip().lower())
     flag = True
     while True:
@@ -154,14 +166,14 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
 
     print('''Searching for nouns...
 
-             Search criteria:
-             * Search frequency: {}
-             * Word length: {} to {} characters
-             * Genders: {}
-             * Cases: {}
-             * Numerus: {}
-             '''.format(search_freq, length_min, length_max,
-                        genders, cases, numerus))
+        Search criteria:
+        * Search frequency: {}
+        * Word length: {} to {} characters
+        * Genders: {}
+        * Cases: {}
+        * Numerus: {}
+        '''.format(search_freq, length_min, length_max,
+                   '/'.join(genders), '/'.join(cases), '/'.join(numerus)))
 
     freq_dict = dict()
     with open('deWaC_freqlist.tsv', 'r', encoding='utf-8') as F:
@@ -178,23 +190,28 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
                 # Check length
                 if length_min <= len(word) <= length_max:
                     # Check morphological criteria
-                    if (gender in genders) and (num in numerus) and (gender in genders):
+                    if (gender in genders) and \
+                       (num in numerus) and \
+                       (case in cases):
                         if word in freq_dict.keys():
                             if freq in freq_dict[word].keys():
-                                freq_dict = add_to_dict(freq_dict, word, freq, gender, case, num)
+                                freq_dict = add_to_dict(freq_dict, word, freq,
+                                                        gender, case, num)
                             else:
                                 freq_dict[word][freq] = dict()
                                 freq_dict[word][freq]['gender'] =  set()
                                 freq_dict[word][freq]['case'] = set()
                                 freq_dict[word][freq]['numerus'] = set()
-                                freq_dict = add_to_dict(freq_dict, word, freq, gender, case, num)
+                                freq_dict = add_to_dict(freq_dict, word, freq,
+                                                        gender, case, num)
                         else:
                             freq_dict[word] = dict()
                             freq_dict[word][freq] = dict()
                             freq_dict[word][freq]['gender'] =  set()
                             freq_dict[word][freq]['case'] = set()
                             freq_dict[word][freq]['numerus'] = set()
-                            freq_dict = add_to_dict(freq_dict, word, freq, gender, case, num)
+                            freq_dict = add_to_dict(freq_dict, word, freq,
+                                                    gender, case, num)
 
     # Transform the frequency dictionary to a list
     freq_list = []
@@ -213,7 +230,7 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
 
     print('\nFound the following nouns with similar frequency:\n')
     for entry in freq_list:
-        print('\t{0: <22} {1: <5}\t{2: <10}\t{3: <10}\t{4: <10}'.format(*entry))
+        print('\t{0: <20}\t{1: <10}\t{2: <10}\t{3: <10}\t{4: <}'.format(*entry))
 
 def search_customization(genders, cases, numerus, length_diff):
 
@@ -223,20 +240,23 @@ def search_customization(genders, cases, numerus, length_diff):
     '''
 
     # Search customization
-    print('\nCustomize the search by changing the default search gender(s) / case(s) / word length difference / numerus?')
+    print('\nCustomize the search by changing the default search gender(s) / '
+          'case(s) / word length difference / numerus?')
     print('Press \'y\' for yes, otherwise press Enter.')
     choice_custom = check_quit(input().strip().lower())
     if choice_custom != 'y':
         return genders, cases, numerus, length_diff
 
     print('''
-    Type the desired length difference (an integer), gender(s), case(s) and/or numerus, each separated by commas.
+    Type the desired length difference (an integer), gender(s), case(s) \
+    and/or numerus, each separated by commas.
     * Options for case: nom, gen, dat, acc
     * Options for gender: masc, fem, neut
     * Options for numerus: sing OR plu
     * Options for length difference: any integer
-    (not all entries are required, e.g. it is possible to enter only \'3, nom, acc\' to restrict the
-    search to nominative/accusative results that differ from the target by 3 characters in length max.)
+    (not all entries are required, e.g. it is possible to enter only
+    \'3, nom, acc\' to restrict the search to nominative/accusative results
+    that differ from the target by 3 characters in length max.)
     ''')
 
     custom_input = check_quit(input().lower())
@@ -246,6 +266,7 @@ def search_customization(genders, cases, numerus, length_diff):
     possible_genders = ['fem', 'masc', 'neut']
     new_cases = []
     new_genders = []
+    new_numbers = []
     for entry in customizations:
         try:
             new_diff = int(entry)
@@ -254,18 +275,15 @@ def search_customization(genders, cases, numerus, length_diff):
             if entry in possible_cases:
                 new_cases.append(entry)
             elif entry in possible_numbers:
-                new_numerus = entry
+                new_numbers.append(entry)
             elif entry in possible_genders:
                 new_genders.append(entry)
     if new_cases != []:
         cases = new_cases
     if new_genders != []:
         genders = new_genders
-    try:
-        new_numerus
-        numerus = new_numerus
-    except NameError:
-        pass
+    if new_numbers != []:
+        numerus = new_numbers
 
     return genders, cases, numerus, length_diff
 
@@ -309,7 +327,8 @@ def get_target_freq(target_word):
             if word == target_word:
                 return freq
         # If no target word is found, try again:
-        print('\nTarget word not found. Press Enter to try again with another target.\n')
+        print('\nTarget word not found. '
+              'Press Enter to try again with another target.\n')
         check_quit(input())
         search_by_target()
 
@@ -344,7 +363,8 @@ def main():
     '''
 
     # Select the search mode: target search or frequency search
-    print('Press \'1\' to enter Search-by-Target mode or press \'2\' to enter Search-by-Frequency mode:')
+    print('Press \'1\' to enter Search-by-Target mode or press \'2\' to enter '
+          'Search-by-Frequency mode:')
     mode_input = check_quit(input().strip())
 
     flag = True
