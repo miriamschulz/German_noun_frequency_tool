@@ -17,12 +17,12 @@ anaconda3/lib/python3.6/site-packages/demorphy-1.0-py3.6.egg/demorphy/data/
 
 USAGE: python German_noun_frequency_tool.py
 
-MODE 1: similar target search
+MODE 1: similar target search (Search-by-Target)
 Input: a target word
 Searches for nouns that are similar to the input target word in frequency,
 length and morphological criteria (gender, case and numerus)
 
-MODE 2: frequency search
+MODE 2: frequency search (Search-by-Frequency)
 Input: a frequency (number)
 Extracts all nouns with a similar frequency
 
@@ -55,15 +55,19 @@ def search_by_target():
 
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
+    current_mode = 1
     print('Currently in MODE 1: Search-by-Target'.upper())
-    print('\nTo exit the program, type \'quit\' at any time.')
-    print('\nPlease enter a target word:')
-    target_word = check_quit(input().strip())
+    print('\nTo exit the program, type \'quit\' or \'q\' at any time.')
+    print('To switch to Search-by-Frequency mode, press \'s\'.')
+    print('\nPlease enter a target word:', end=' ')
+    target_word = check_input(input().strip(), current_mode)
     target_freq = get_target_freq(target_word)
     t_genders, t_cases, t_nums = get_target_morph(target_word)
-    print('\n\tChosen target: \'{}\''.format(target_word))
-    print('\tFrequency rank: {} per million'.format(target_freq))
-    print('\tPossible genders: {}'.format(', '.join(t_genders)))
+    print('\n\tChosen target: \t\t\'{}\''.format(target_word))
+    print('\tFrequency rank: \t{} per million'.format(target_freq))
+    print('\tPossible genders: \t{}'.format(', '.join(t_genders)))
+    print('\tPossible cases: \t{}'.format(', '.join(t_cases)))
+    print('\tPossible numerus: \t{}'.format(', '.join(t_nums)))
 
     # Define search defaults
     length_diff = 2
@@ -71,32 +75,34 @@ def search_by_target():
     numerus = ['sing']
 
     # Customize search
-    genders, cases, numerus, length_diff = search_customization(t_genders,
+    genders, cases, numerus, length_diff, current_mode = search_customization(
+                                                                t_genders,
                                                                 cases,
                                                                 numerus,
-                                                                length_diff)
+                                                                length_diff,
+                                                                current_mode)
 
-    length_min = max(1, len(target_word) - length_diff)
+
+    length_min = len(target_word) - length_diff
+    if length_min <= 0:
+        length_min = 1
     length_max = len(target_word) + length_diff
 
     # Search for similar targets
     main_search(target_freq, length_min, length_max, genders, cases, numerus)
 
-    print('\nRun new Search-by-Target: Press Enter. '
-          'Switch to Search-by-Frequency: Press \'2\'. '
-          '(To exit, type \'quit\'.)')
-    continue_input = check_quit(input().strip().lower())
+    print('\n\tRun new Search-by-Target: Press Enter. ')
+    print('\tSwitch to Search-by-Frequency: Press \'s\'.')
+    print('\tTo exit, type \'quit\' or \'q\'.')
+    continue_input = check_input(input().strip().lower(), current_mode)
     flag = True
     while True:
         if continue_input == '':
             flag = False
             search_by_target()
-        elif continue_input == '2':
-            flag = False
-            search_by_freq()
         else:
             print('Could not interpret choice. Please try again.')
-            continue_input = check_quit(input().strip().lower())
+            continue_input = check_input(input().strip().lower(), current_mode)
 
 def search_by_freq():
 
@@ -106,11 +112,13 @@ def search_by_freq():
 
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
+    current_mode = 2
     print('Currently in MODE 2: Search-by-Frequency'.upper())
     print('\nTo exit the program, type \'quit\' at any time.')
+    print('To switch to Search-by-Target mode, press \'s\'.')
     print('\nPlease enter a number (int or float) for the desired '
-          'search frequency (per million):')
-    search_freq = check_quit(input().strip())
+          'search frequency (per million):', end=' ')
+    search_freq = check_input(input().strip(), current_mode)
 
     # Check if the input can be converted to a float, otherwise retry:
     flag = True
@@ -119,21 +127,23 @@ def search_by_freq():
             search_freq = float(search_freq)
             flag = False
         except ValueError:
-            print('Error: please enter a number.')
-            search_freq = check_quit(input().strip())
+            print('Error: please enter a number. Try again:', end=' ')
+            search_freq = check_input(input().strip(), current_mode)
 
-    # Search defaults
+    # Set search defaults
     genders = ['masc', 'fem', 'neut']
-    cases = ['nom', 'gen', 'dat', 'acc']
-    numerus = ['sing', 'plu']
+    cases = ['dat', 'acc']
+    numerus = ['sing']
     length_diff = None  # not used here
     length_min = 1
     length_max = 100
 
-    genders, cases, numerus, length_diff = search_customization(genders,
+    genders, cases, numerus, length_diff, current_mode = search_customization(
+                                                                genders,
                                                                 cases,
                                                                 numerus,
-                                                                length_diff)
+                                                                length_diff,
+                                                                current_mode)
 
     if length_diff != None:
         length_min = length_diff
@@ -141,42 +151,41 @@ def search_by_freq():
 
     main_search(search_freq, length_min, length_max, genders, cases, numerus)
 
-    print('\nRun new Search-by-Frequency: Press Enter. '
-          'Switch to Search-by-Target: Press \'1\'. '
-          '(To exit, type \'quit\'.)')
-    continue_input = check_quit(input().strip().lower())
+    print('\nRun new Search-by-Frequency: Press Enter.')
+    print('Switch to Search-by-Target: Press \'s\'.')
+    print('(To exit, type \'quit\' or \'q\'.)')
+    continue_input = check_input(input().strip().lower(), current_mode)
     flag = True
     while True:
         if continue_input == '':
             flag = False
             search_by_freq()
-        elif continue_input == '1':
-            flag = False
-            search_by_target()
         else:
-            print('Could not interpret choice. Please try again.')
-            continue_input = check_quit(input().strip().lower())
+            print('Could not interpret choice. Please try again.', end=' ')
+            continue_input = check_input(input().strip().lower(), current_mode)
 
 def main_search(search_freq, length_min, length_max, genders, cases, numerus):
 
     '''
-    Reads the file containing the word frequencies and extracts words
+    Reads the file containing the word frequencies and extracts+prints words
     on the basis of the specified search criteria
     '''
 
     print('''Searching for nouns...
 
-        Search criteria:
-        * Search frequency: {}
-        * Word length: {} to {} characters
-        * Genders: {}
-        * Cases: {}
-        * Numerus: {}
+        Search criteria
+        * Search frequency: \t{} per million
+        * Word length: \t\t{} to {} characters
+        * Genders: \t\t{}
+        * Cases: \t\t{}
+        * Numerus: \t\t{}
         '''.format(search_freq, length_min, length_max,
                    '/'.join(genders), '/'.join(cases), '/'.join(numerus)))
 
     freq_dict = dict()
     with open('deWaC_freqlist.tsv', 'r', encoding='utf-8') as F:
+        i = 0
+        n = 1974122  # total lines in deWaC_freqlist.tsv
         for line in F:
             line=line.split()
             word=line[0]
@@ -212,7 +221,9 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
                             freq_dict[word][freq]['numerus'] = set()
                             freq_dict = add_to_dict(freq_dict, word, freq,
                                                     gender, case, num)
-
+            if i % 1000 == 0:
+                print(' Progress: {:2.0%}'.format(i/n), end='\r')
+            i += 1
     # Transform the frequency dictionary to a list
     freq_list = []
     for word, f in freq_dict.items():
@@ -226,13 +237,22 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
                               morph_all[1], morph_all[2]))
     # Reorder list by increasing difference from the target freq:
     freq_list = sorted(freq_list, key=lambda x: abs(search_freq - x[1]))
-    freq_list.insert(0, ('NOUN', 'FREQUENCY', 'GENDERS', 'CASES', 'NUMERUS'))
+    freq_list.insert(0, ('NOUN', 'FREQUENCY', 'GENDERS', 'CASES', 'NUMERUS\n'+
+                        (' '*8)+('_'*106)))
 
-    print('\nFound the following nouns with similar frequency:\n')
+    print('\n\nFound the following {} nouns with similar frequency:\n'\
+          .format(len(freq_list)))
+    j = 0
     for entry in freq_list:
-        print('\t{0: <20}\t{1: <10}\t{2: <10}\t{3: <10}\t{4: <}'.format(*entry))
+        line = '{0: <25}|\t{1: <10}|\t{2: <20}|\t{3: <20}|\t{4: <10}'\
+              .format(*entry)
+        if j % 2 != 0:
+            print('\t\u001b[47m{}\u001b[0m'.format(line))
+        else:
+            print('\t'+line)
+        j += 1
 
-def search_customization(genders, cases, numerus, length_diff):
+def search_customization(genders, cases, numerus, length_diff, current_mode):
 
     '''
     Promts the user to enter their own search criteria
@@ -240,12 +260,12 @@ def search_customization(genders, cases, numerus, length_diff):
     '''
 
     # Search customization
-    print('\nCustomize the search by changing the default search gender(s) / '
-          'case(s) / word length difference / numerus?')
-    print('Press \'y\' for yes, otherwise press Enter.')
-    choice_custom = check_quit(input().strip().lower())
+    print('\nCustomize the search by changing the default ')
+    print('search gender(s) / case(s) / word length difference / numerus?')
+    print('Press \'y\' for yes, otherwise press Enter.', end=' ')
+    choice_custom = check_input(input().strip().lower(), current_mode)
     if choice_custom != 'y':
-        return genders, cases, numerus, length_diff
+        return genders, cases, numerus, length_diff, current_mode
 
     print('''
     Type the desired length difference (an integer), gender(s), case(s) \
@@ -254,16 +274,19 @@ def search_customization(genders, cases, numerus, length_diff):
     * Options for gender: masc, fem, neut
     * Options for numerus: sing OR plu
     * Options for length difference: any integer
+    * Remove all search filters: simply type \'all\'
     (not all entries are required, e.g. it is possible to enter only
     \'3, nom, acc\' to restrict the search to nominative/accusative results
-    that differ from the target by 3 characters in length max.)
-    ''')
+    that differ from the target by 3 characters in length max.) ''')
 
-    custom_input = check_quit(input().lower())
+    custom_input = check_input(input().lower(), current_mode)
     customizations = [el.strip() for el in custom_input.split(',')]
     possible_cases = ['nom', 'gen', 'dat', 'acc']
     possible_numbers = ['sing', 'plu']
     possible_genders = ['fem', 'masc', 'neut']
+    if 'all' in customizations:
+        return possible_genders, possible_cases, possible_numbers, \
+               100, current_mode
     new_cases = []
     new_genders = []
     new_numbers = []
@@ -285,7 +308,7 @@ def search_customization(genders, cases, numerus, length_diff):
     if new_numbers != []:
         numerus = new_numbers
 
-    return genders, cases, numerus, length_diff
+    return genders, cases, numerus, length_diff, current_mode
 
 def frequency_check(target_freq, freq):
     '''
@@ -328,9 +351,13 @@ def get_target_freq(target_word):
                 return freq
         # If no target word is found, try again:
         print('\nTarget word not found. '
-              'Press Enter to try again with another target.\n')
-        check_quit(input())
-        search_by_target()
+              'Press Enter to try again with another target '
+              'or press \'s\' to switch to Search-by-Frequency.\n')
+        choice = check_input(input().strip(), None)
+        if choice.lower() == 's':
+            seaarch_by_freq()
+        else:
+            search_by_target()
 
 def get_target_morph(noun):
     '''
@@ -346,7 +373,7 @@ def get_target_morph(noun):
         numbers.append(x.numerus)
     return set(genders), set(cases), set(numbers)
 
-def check_quit(some_input):
+def check_input(some_input, current_mode):
     '''
     Function to be called on every user input that checks whether
     the user wishes to quit the program
@@ -355,6 +382,11 @@ def check_quit(some_input):
     if some_input in quit_signals:
         print('Exiting...\n')
         sys.exit()
+    elif some_input.lower() == 's':
+        if current_mode == 1:
+            search_by_freq()
+        elif current_mode == 2:
+            search_by_target()
     return some_input
 
 def main():
@@ -363,9 +395,9 @@ def main():
     '''
 
     # Select the search mode: target search or frequency search
-    print('Press \'1\' to enter Search-by-Target mode or press \'2\' to enter '
-          'Search-by-Frequency mode:')
-    mode_input = check_quit(input().strip())
+    print('\nPress \'1\' to enter Search-by-Target mode or press \'2\' to '
+          'enter Search-by-Frequency mode:', end=' ')
+    mode_input = check_input(input().strip(), None)
 
     flag = True
     while flag:
@@ -374,7 +406,7 @@ def main():
             flag = False
         except ValueError:
             print('Error: please type either \'1\' or \'2\'.')
-            mode_input = check_quit(input().strip())
+            mode_input = check_input(input().strip(), None)
 
     if search_mode == 1:
         search_by_target()
@@ -385,7 +417,8 @@ if __name__ == '__main__':
 
     print('\nWelcome!')
 
-    print('\nTo exit the program, type \'quit\' and press Enter at any point.')
+    print('\nTo exit the program, type \'quit\' or \'q\' '
+          'followed by Enter at any point.')
 
     # Initialize gender classifier and POS tagger
     analyzer=Analyzer(char_subs_allowed=True)

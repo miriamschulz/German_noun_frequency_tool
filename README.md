@@ -8,7 +8,8 @@ The program takes as input either a noun or a frequency and retrieves German nou
 
 The program was designed to facilitate the construction of psycholinguistic stimuli that require several target words of comparable frequency, length, gender, etc.
 
-Usage:
+## Usage
+
 `python german_noun_frequency_tool.py `
 
 ## Requirements
