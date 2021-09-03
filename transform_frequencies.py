@@ -42,7 +42,7 @@ def get_morph_analysis(word):
     try:
         s = demorphyAnalyzer.analyze(word)
     except KeyError:
-        return
+        return 'None_found'
     morph_analyses = []
     for x in s:
         pos = x.ptb_tag
@@ -72,11 +72,16 @@ def transform_freqs(inputfilename, outputfilename, total):
     keep_n = len(keep)
     print('Found {} words starting with a capital letter.'.format(keep_n))
     print('Now starting gender-numerus-case analysis...')
-    i = 0
+    i = 0  # initialize counter
+    j = 0  # additional counter to keep track of untreatable words
     final_nouns = []
+    unanalyzables = []
     for (word, freq_raw) in keep:
         morph_analyses = get_morph_analysis(word)  # get gender, numerus, case
-        if not morph_analyses == None:  # exclude non-nouns
+        if morph_analyses == 'None_found':  # exclude unanalyzable words
+            j += 1
+            unanalyzables.append(word)
+        elif morph_analyses != None:  # exclude non-nouns
             freq_per_million = (freq_raw / total) * 1000000
             freq_per_million = round(freq_per_million, 2)
             if freq_per_million > 0.00:  # do not keep very rare words
@@ -85,12 +90,25 @@ def transform_freqs(inputfilename, outputfilename, total):
                                         analysis[0], analysis[1], analysis[2]))
         i += 1
         if i % 1000 == 0:
-            print('  Progress: {:2.2%}'.format(i/keep_n), end='\r')
+            print('  Progress: {:2.2%}'\
+                  .format(i/keep_n), end='\r')
 
+    print('\nFinished morphological analysis.')
+    print('The following {} words have been skipped since they'
+          'could not be morphologically analyzed:'\
+           .format(j))
+    for a,b,c in zip(unanalyzables[::3],unanalyzables[1::3],unanalyzables[2::3]):
+        print('{:<30}{:<30}{:<}'.format(a,b,c))
+    if len(unanalyzables) % 3 != 0:
+        if len(unanalyzables) % 3 == 1:
+            print('{:<30}'.format(unanalyzables[-1]))
+        else:
+            print('{:<30}{:<}'.format(unanalyzables[-2], unanalyzables[-1]))
+
+    print('\nNow writing to file...')
     output = open(outputfilename, 'w', encoding='utf8')
     # output.write('\t'.join(['Noun', 'Freq_per_million', 'Freq_raw',
     #                         'Gender', 'Numerus', 'Case']))
-    print('\nFinished morphological analysis. Now writing to file...')
     for line in final_nouns:
         output.write('\t'.join(str(el) for el in line) + '\n')
     output.close()
