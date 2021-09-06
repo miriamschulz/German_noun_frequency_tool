@@ -65,6 +65,7 @@ def search_by_target():
     t_genders, t_cases, t_nums = get_target_morph(target_word)
     print('\n\tChosen target: \t\t\'{}\''.format(target_word))
     print('\tFrequency rank: \t{} per million'.format(target_freq))
+    print('\tWord length: \t\t{} characters'.format(len(target_word)))
     print('\tPossible genders: \t{}'.format(', '.join(t_genders)))
     print('\tPossible cases: \t{}'.format(', '.join(t_cases)))
     print('\tPossible numerus: \t{}'.format(', '.join(t_nums)))
@@ -261,7 +262,7 @@ def search_customization(genders, cases, numerus, length_diff, current_mode):
 
     # Search customization
     print('\nCustomize the search by changing the default ')
-    print('search gender(s) / case(s) / word length difference / numerus?')
+    print('search gender(s) / case(s) / numerus / word length difference?')
     print('Press \'y\' for yes, otherwise press Enter.', end=' ')
     choice_custom = check_input(input().strip().lower(), current_mode)
     if choice_custom != 'y':
