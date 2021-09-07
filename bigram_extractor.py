@@ -10,31 +10,29 @@ USAGE: python bigram_extractor.py
 
 For POS tagging, install the German model for spaCy with:
 python -m spacy download de_core_news_sm
+More info at: https://explosion.ai/blog/german-model
 
 SpaCy POS-tag set:
 
-50000
-ADJ
-ADP
-ADV
-AUX
-CCONJ
-DET
-NOUN
-NUM
-PART
-PRON
-PROPN
-PUNCT
-SCONJ
-VERB
-X
+	 ADJ
+	 ADP
+	 ADV
+	 AUX
+	 CCONJ
+	 DET
+	 NOUN
+	 NUM
+	 PART
+	 PRON
+	 PROPN
+	 PUNCT
+	 SCONJ
+	 VERB
+	 X
 
 '''
 
 import spacy
-
-nlp = spacy.load("de_core_news_sm")
 
 def get_verb_bigrams(filename):
     print('Starting bigram extraction...')
@@ -46,27 +44,30 @@ def get_verb_bigrams(filename):
         tags = set()
         for line in F:
             line = line.split()
-            bigram_count = line[0]
-            lemma1 = line[1]
-            lemma2 = line[2]
-            lemma2_analysis = nlp(lemma2)[0]
-            lemma2_pos = lemma2_analysis.pos_
-            if lemma2_pos in keep_tags:
-                lemma1_analysis = nlp(lemma1)[0]
-                lemma1_pos = lemma1_analysis.pos_
-                if lemma1_pos == 'NOUN':
-                    keep_bigrams.append((bigram_count, lemma1, lemma1_pos,
-                                         lemma2, lemma2_pos))
-            tags.add(lemma2_pos)
+            if len(line) >= 3:  # to avoid errors in case of empty lines
+                bigram_count = line[0]
+                lemma1 = line[1]
+                lemma2 = line[2]
+                lemma2_analysis = nlp(lemma2)[0]
+                lemma2_pos = lemma2_analysis.pos_
+                if lemma2_pos in keep_tags:
+                    lemma1_analysis = nlp(lemma1)[0]
+                    lemma1_pos = lemma1_analysis.pos_
+                    if lemma1_pos == 'NOUN':
+                        keep_bigrams.append((bigram_count, lemma1, lemma1_pos,
+                                             lemma2, lemma2_pos))
+                tags.add(lemma2_pos)
+
             i += 1
-            if i == 1000000:
-                break
-            if i % 1000 == 0:
-                print(' Progress: {:2.2%}'.format(i/n), end='\r')
+            # if i == 1000:
+            #     break
+            if i % 500 == 0:
+                print(' Progress: {:2.2%} (processed {} bigrams)'\
+                      .format(i/n, i), end='\r')
 
     print('\n\nProcessed all {} lines.'.format(i))
     print('\nFound {} NOUN-VERB bigrams.'.format(len(keep_bigrams)))
-    print('\nFinal tagset:')
+    print('\nFinal tag set ({} tags)'.format(len(tags)))
     for t in sorted(list(tags)):
         print('\t', t)
 
@@ -82,7 +83,8 @@ def write_bigrams_to_file(bigrams, outfilename):
     return
 
 if __name__ == '__main__':
-
+    nlp = spacy.load("de_core_news_sm", disable=["tok2vec", "parser", \
+                     "attribute_ruler", "lemmatizer", "ner"])
     bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt')
     outfilename = 'bigrams_noun_verb.tsv'
     write_bigrams_to_file(bigrams, outfilename)

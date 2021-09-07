@@ -1,6 +1,7 @@
 '''
 1 September 2021
 Miriam Schulz
+mschulz@coli.uni-saarland.de
 
 Tool for stimuli creation
 Version 4 – interactive version for the German deWaC noun frequency list

@@ -1,6 +1,7 @@
 '''
 24 August 2021
 Miriam Schulz
+mschulz@coli.uni-saarland.de
 
 Script to transform the raw frequencies (token counts) in the deWaC
 German frequency list (downloaded from
@@ -13,8 +14,8 @@ USAGE: python transform_frequencies.py
 Exclude nouns with a frequency per million of 0.00 to make the list smaller
 
 ## Extension 26 August 2021:
-Using demorphy, additionally annotate output for gender, number and case
-(create one line for each possible analysis)
+Using DEMorphy (https://github.com/DuyguA/DEMorphy), additionally annotate
+the output for gender, number and case (one line per possible analysis)
 
 '''
 
