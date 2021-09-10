@@ -4,7 +4,7 @@
 
 This is a python program that lets the user search through a list of German nouns sorted by frequency (constructed from the deWaC corpus (Baroni et al., 2009), downloaded from [here](https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists); morphological annotation through DEMorphy (Altinok, 2018)).
 
-The program takes as input either a noun or a frequency and retrieves German nouns that are similar in frequency, divided into 3 frequency groups. Additional search criteria include word length, gender, case and numerus.
+The program takes as input either a noun or a frequency and retrieves German nouns that are similar in frequency, divided into 3 frequency groups. Further search criteria include word length, gender, case and numerus. An additional function lets the user enter a verb and checks if any of the nouns found in the search can occur together with this verb (by using the deWaC lemmatized bigrams, also downloaded from [here](https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists)).
 
 The program was designed to facilitate the construction of psycholinguistic stimuli that require several target words of comparable frequency, length, gender, etc.
 
