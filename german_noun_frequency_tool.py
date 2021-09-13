@@ -61,10 +61,12 @@ def search_by_target():
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
     current_mode = 1
-    print('{}Currently in MODE 1: Search-by-Target{}'.upper().format(heading_col, reset_col))
+    print('{}Currently in MODE 1: Search-by-Target{}'.upper()\
+          .format(heading_col, reset_col))
     print('\nTo exit the program, type \'quit\' or \'q\' at any time.')
     print('To switch to Search-by-Frequency mode, press \'s\'.')
-    print('\n{}Please enter a target word:{}'.format(input_col, reset_col), end=' ')
+    print('\n{}Please enter a target word:{}'\
+          .format(input_col, reset_col), end=' ')
     target_word = check_input(input().strip(), current_mode)
     target_freq = get_target_freq(target_word)
     t_genders, t_cases, t_nums = get_target_morph(target_word)
@@ -76,21 +78,18 @@ def search_by_target():
     print('\tPossible numerus: \t{}'.format(', '.join(t_nums)))
 
     # Define search defaults
-    length_diff = 2
     cases = ['dat', 'acc']
     numerus = ['sing']
-
-    # Customize search
-    genders, cases, numerus, length_diff, current_mode = search_customization(
-                                                                t_genders,
-                                                                cases,
-                                                                numerus,
-                                                                length_diff,
-                                                                current_mode)
+    length_diff = 2
     length_min = len(target_word) - length_diff
     if length_min <= 0:
         length_min = 1
     length_max = len(target_word) + length_diff
+
+    # Customize search
+    genders, cases, numerus, length_min, length_max = \
+        search_customization(t_genders, cases, numerus, length_min, length_max,
+                             current_mode)
 
     # Search for similar targets
     freq_list = main_search(target_freq, length_min, length_max,
@@ -107,11 +106,13 @@ def search_by_freq():
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
     current_mode = 2
-    print('{}Currently in MODE 2: Search-by-Frequency{}'.upper().format(heading_col, reset_col))
+    print('{}Currently in MODE 2: Search-by-Frequency{}'.upper()\
+          .format(heading_col, reset_col))
     print('\nTo exit the program, type \'quit\' at any time.')
     print('To switch to Search-by-Target mode, press \'s\'.')
     print('\n{}Please enter a number (int or float) for the desired '
-          'search frequency (per million):{}'.format(input_col, reset_col), end=' ')
+          'search frequency (per million):{}'\
+          .format(input_col, reset_col), end=' ')
     search_freq = check_input(input().strip(), current_mode)
 
     # Check if the input can be converted to a float, otherwise retry:
@@ -121,27 +122,21 @@ def search_by_freq():
             search_freq = float(search_freq)
             flag = False
         except ValueError:
-            print('{}Error: please enter a number. Try again:{}'.format(warn_col, reset_col), end=' ')
+            print('{}Error: please enter a number. Try again:{}'\
+                  .format(warn_col, reset_col), end=' ')
             search_freq = check_input(input().strip(), current_mode)
 
     # Set search defaults
     genders = ['masc', 'fem', 'neut']
     cases = ['dat', 'acc']
     numerus = ['sing']
-    length_diff = None  # not used here by default
     length_min = 1
     length_max = 100
 
-    genders, cases, numerus, length_diff, current_mode = search_customization(
-                                                                genders,
-                                                                cases,
-                                                                numerus,
-                                                                length_diff,
-                                                                current_mode)
-
-    # if length_diff != None:
-    #     length_min = length_diff
-    #     length_max = length_diff
+    # Customize search
+    genders, cases, numerus, length_min, length_max = \
+        search_customization(genders, cases, numerus, length_min, length_max,
+                             current_mode)
 
     freq_list = main_search(search_freq, length_min, length_max,
                             genders, cases, numerus)
@@ -238,55 +233,65 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
 
     return freq_list
 
-def search_customization(genders, cases, numerus, length_diff, current_mode):
+def search_customization(genders, cases, numerus,
+                        length_min, length_max, current_mode):
 
     '''
     Promts the user to enter their own search criteria
     (e.g. search only for plural nouns)
     '''
 
-    # Search customization
-    print('\nCustomize the search by changing the default ')
-    print('search gender(s) / case(s) / numerus / word length difference?')
-    print('{}Press \'y\' for yes, otherwise press Enter.{}'.format(input_col, reset_col), end=' ')
-    choice_custom = check_input(input().strip().lower(), current_mode)
-    if choice_custom != 'y':
-        return genders, cases, numerus, length_diff, current_mode
-
-    print('{}Type the desired length difference (an integer), gender(s), \n'
-          'case(s) and/or numerus, each separated by commas.{}'\
-          .format(input_col, reset_col))
-    print('\t*  Options for case: nom, gen, dat, acc')
-    print('\t*  Options for gender: masc, fem, neut')
-    print('\t*  Options for numerus: sing OR plu')
-    print('\t*  Options for length difference: any integer')
-    print('\t*  Remove all search filters: simply type \'all\'')
-    print('(not all entries are required, e.g. it is possible to enter only')
-    print('\'3, nom, acc\' to restrict the search to nominative/accusative')
-    print('results that differ from the target by 3 characters in length max.)')
-
-    custom_input = check_input(input().lower(), current_mode)
-    customizations = [el.strip() for el in custom_input.split(',')]
     possible_cases = ['nom', 'gen', 'dat', 'acc']
     possible_numbers = ['sing', 'plu']
     possible_genders = ['fem', 'masc', 'neut']
+
+    # Search customization
+    print('\nCustomize the search by changing the default ')
+    print('search gender(s) / case(s) / numerus / word length difference?')
+    print('{}Press \'y\' for yes, otherwise press Enter.{}'\
+          .format(input_col, reset_col), end=' ')
+    choice_custom = check_input(input().strip().lower(), current_mode)
+    if choice_custom != 'y':
+        return genders, cases, numerus, length_min, length_max
+
+    print('\n{}Type the desired word length range, gender(s), case(s) '
+          'and/or numerus.'
+          '\nSeparate each by a comma.{}'\
+          .format(input_col, reset_col))
+    print('\tOptions:')
+    print('\t*  LENGTH RANGE:\te.g. \'8-10\' for words of '
+          '8 to 10 characters in length')
+    print('\t*  CASE:\t\tnom, gen, dat, acc')
+    print('\t*  GENDER:\t\tmasc, fem, neut')
+    print('\t*  NUMERUS:\t\tsing OR plu')
+    print('\t*  Remove all search filters: simply type \'all\'')
+    print('(not all entries are required, e.g. it is possible to enter only '
+          '\'3-5, nom, gen\' \nto restrict the search to nominative and '
+          'genitive nouns with a word length \nof 3 to 5 characters.)')
+
+    custom_input = check_input(input().lower(), current_mode)
+    customizations = [el.strip() for el in custom_input.split(',')]
+
     if 'all' in customizations:
-        return possible_genders, possible_cases, possible_numbers, \
-               100, current_mode
+        return possible_genders, possible_cases, possible_numbers, 1, 100
+
     new_cases = []
     new_genders = []
     new_numbers = []
     for entry in customizations:
-        try:
-            new_diff = int(entry)
-            length_diff = new_diff
-        except:
-            if entry in possible_cases:
-                new_cases.append(entry)
-            elif entry in possible_numbers:
-                new_numbers.append(entry)
-            elif entry in possible_genders:
-                new_genders.append(entry)
+        if '-' in entry:
+            length_min, length_max = entry.split('-')
+            try:
+                length_min = int(length_min)
+                length_max = int(length_max)
+            except:
+                pass
+        elif entry in possible_cases:
+            new_cases.append(entry)
+        elif entry in possible_numbers:
+            new_numbers.append(entry)
+        elif entry in possible_genders:
+            new_genders.append(entry)
     if new_cases != []:
         cases = new_cases
     if new_genders != []:
@@ -294,7 +299,7 @@ def search_customization(genders, cases, numerus, length_diff, current_mode):
     if new_numbers != []:
         numerus = new_numbers
 
-    return genders, cases, numerus, length_diff, current_mode
+    return genders, cases, numerus, length_min, length_max
 
 def frequency_check(target_freq, freq):
     '''
@@ -366,7 +371,8 @@ def bigram_search(freq_list, current_mode):
     input verb in the lemmatized deWaC bigram list
     '''
     print('\n{}Please enter a target verb (infinitive) to check for '
-          'co-occurrence with the retrieved nouns:{}'.format(input_col, reset_col), end=' ')
+          'co-occurrence with the retrieved nouns:{}'\
+          .format(input_col, reset_col), end=' ')
     target_verb = check_input(input().strip(), current_mode)
     target_verb = target_verb.lower()
     keep_bigrams = []
@@ -406,7 +412,7 @@ def bigram_search(freq_list, current_mode):
                 print('\t'+line)
             j += 1
     else:
-        print('\n{}Found no nouns in the search that can occur with {}{}.'\
+        print('\n{}Found no nouns in the search that can occur with \'{}\'{}.'\
               .format(warn_col, target_verb, reset_col))
     continue_options(current_mode, freq_list)
 
@@ -417,11 +423,14 @@ def continue_options(current_mode, freq_list):
     else:
         current_search_mode = 'Search-by-Target'
         other_search_mode = 'Search-by-Frequency'
-    print('\nRun new {}: {}Press Enter.{}'.format(current_search_mode, input_col, reset_col))
-    print('Switch to {}: {}Press \'s\'.{}'.format(other_search_mode, input_col, reset_col))
+    print('\nRun new {}: press {}Enter{}'\
+          .format(current_search_mode, input_col, reset_col))
+    print('Switch to {}: press {}\'s\'{}'\
+          .format(other_search_mode, input_col, reset_col))
     print('To check which of the nouns can follow a specific target verb:'
-          ' {}Press \'v\'.{}'.format(input_col, reset_col))
-    print('To exit, {}type \'quit\' or \'q\'.{}'.format(input_col, reset_col), end=' ')
+          ' press {}\'v\'{}'.format(input_col, reset_col))
+    print('To exit, type {}\'quit\' or \'q\'.{}'\
+          .format(input_col, reset_col), end=' ')
     continue_input = check_input(input().strip().lower(), current_mode)
     flag = True
     while True:
@@ -434,7 +443,7 @@ def continue_options(current_mode, freq_list):
         elif continue_input == 'v':
             bigram_search(freq_list, current_mode)
         else:
-            print('\t{}Could not interpret choice. Please try again.{}'\
+            print('{}Could not interpret choice. Please try again.{}'\
                   .format(warn_col, reset_col))
             continue_input = check_input(input().strip().lower(), current_mode)
 
@@ -472,10 +481,12 @@ def main():
             if (search_mode == 1) or (search_mode == 2):
                 flag = False
             else:
-                print('{}Error: please type either \'1\' or \'2\'.{}'.format(warn_col, reset_col))
+                print('{}Error: please type either \'1\' or \'2\'.{}'\
+                      .format(warn_col, reset_col))
                 mode_input = check_input(input().strip(), None)
         except ValueError:
-            print('{}Error: please type either \'1\' or \'2\'.{}'.format(warn_col, reset_col))
+            print('{}Error: please type either \'1\' or \'2\'.{}'\
+                  .format(warn_col, reset_col))
             mode_input = check_input(input().strip(), None)
 
     if search_mode == 1:
@@ -486,11 +497,11 @@ def main():
 if __name__ == '__main__':
 
     # Define colors for warnings etc.
+    # back_lightgrey = '\u001b[48;5;254m'
     # back_grey = '\u001b[47m'
-    back_search = '\u001b[48;5;195m'  # light blue
-    back_verbs = '\u001b[48;5;254m'   # light grey
-    # back_yellow = '\u001b[48;5;230m'
     # back_lilac = '\u001b[48;5;189m'
+    back_search = '\u001b[48;5;195m'  # light blue
+    back_verbs = '\u001b[48;5;230m'   # light yellow
     heading_col = '\u001b[30;1m'  # bright black
     warn_col = '\u001b[31;1m'     # bright red
     input_col = '\u001b[36;1m'    # bright cyan
