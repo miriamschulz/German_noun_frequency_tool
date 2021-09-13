@@ -1,6 +1,8 @@
 '''
 
-## Faster working version that filters only for a subset of 12 verbs ##
+## Version that filters for inf. verbs by checking if a words ends with -n
+and only then uses spacy for POS-detection;
+uses a cutoff point for bigram minimal count ##
 
 7 September 2021
 Miriam Schulz
@@ -37,23 +39,36 @@ SpaCy POS-tag set:
 
 import spacy
 
-def get_verb_bigrams(filename):
+def get_verb_bigrams(filename, cutoff_count):
+    '''
+    Extracts bigrams from the deWaC corpus lemmatized bigram list.
+    Keeps only bigrams that end with a verb and start with a noun.
+    If a cutoff_count larger than 0 is given as input, bigrams whose count
+    in the corpus is equal to or lower than this cutoff value will be skipped.
+    '''
     print('Starting bigram extraction...')
     with open(filename, 'r', encoding='utf-8') as F:
         i = 0
-        n = 100852376  # total number of lines in bigram lemma file
-        keep_verbs = ['nehmen', 'kaufen', 'öffnen', 'betreten', 'gehen',
-		              'treten', 'suchen', 'greifen', 'wählen', 'beginnen',
-					  'finden', 'schneiden']
         keep_tags = ['AUX', 'VERB']
         keep_bigrams = []
+        cutoff_n = {'1': 35833352,
+                    '2': 21349329,
+                    '3': 15635096,
+                    '4': 12425589,
+                    '5': 10417585,
+                    '10': 5964572}
+        n = 100852376  # total number of lines in bigram lemma file
+        if cutoff_count in cutoff_n.keys():
+            n = cutoff_n[cutoff_count]
         for line in F:
             line = line.split()
             if len(line) >= 3:  # to avoid errors in case of empty lines
                 bigram_count = line[0]
                 lemma1 = line[1]
                 lemma2 = line[2]
-                if lemma2 in keep_verbs:
+                if bigram_count == cutoff_count:
+                    break
+                if lemma2[-1] == 'n':  # superficial check for verb
                     lemma2_analysis = nlp(lemma2)[0]
                     lemma2_pos = lemma2_analysis.pos_
                     if lemma2_pos in keep_tags:
@@ -65,22 +80,22 @@ def get_verb_bigrams(filename):
                                                  lemma2, lemma2_pos))
 
             i += 1
-            # if i == 10000:
-            #     break
             if i % 1000 == 0:
                 print(' Progress: {:2.2%} (processed {} bigrams)'\
                       .format(i/n, i), end='\r')
+            # if i == 10000:
+            #     break
 
     print('\n\nProcessed all {} lines.'.format(i))
     print('\nFound {} NOUN-VERB bigrams.'.format(len(keep_bigrams)))
-    # print('\nFinal tag set ({} tags)'.format(len(tags)))
-    # for t in sorted(list(tags)):
-    #     print('\t', t)
-
     return keep_bigrams
 
 def write_bigrams_to_file(bigrams, outfilename):
-    print('\nWriting noun-verb bigrams to file (filename: {})'.format(outfilename))
+    '''
+    Writes the extracted noun-verb bigrams to an output file.
+    '''
+    print('\nWriting noun-verb bigrams to file (filename: {})'\
+          .format(outfilename))
     output = open(outfilename, 'w', encoding='utf8')
     for line in bigrams:
         output.write('\t'.join(str(el) for el in line) + '\n')
@@ -89,8 +104,14 @@ def write_bigrams_to_file(bigrams, outfilename):
     return
 
 if __name__ == '__main__':
+
     nlp = spacy.load("de_core_news_sm", disable=["tok2vec", "parser", \
                      "attribute_ruler", "lemmatizer", "ner"])
-    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt')
+
+    # Extract bigrams up to a certain minimum frequency count
+    cutoff_count = '5'
+    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt', cutoff_count)
+
+    # Write extracted bigrams to file
     outfilename = 'bigrams_noun_verb.tsv'
     write_bigrams_to_file(bigrams, outfilename)
