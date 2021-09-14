@@ -49,7 +49,7 @@ def get_verb_bigrams(filename, cutoff_value):
     in the corpus is equal to or lower than this cutoff value will be skipped.
     '''
     print('Starting bigram extraction...')
-    print('(Extracting bigrams with a frequency of at least {})'\
+    print('(Extracting bigrams with a frequency of more than {})'\
           .format(cutoff_value))
     with open(filename, 'r', encoding='utf-8') as F:
         i = 0
