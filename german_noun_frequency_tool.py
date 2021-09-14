@@ -43,7 +43,7 @@ Search parameters (interactively adjustable, except for word frequency):
 - An additional refinement of the search results allows the user to
   restrict the results to those nouns that can occur together with a specific
   verb (with occurrence here meaning that the count of the bigram NOUN + VERB
-  (lemmatized) is >= 1)
+  (lemmatized) is >= 2)
 
 '''
 
@@ -373,11 +373,15 @@ def bigram_search(freq_list, current_mode):
     print('\n{}Please enter a verb (infinitive) to check for '
           'co-occurrence with the retrieved nouns:{}'\
           .format(input_col, reset_col), end=' ')
+    # Transform freq_list to dict for easy lookup:
+    freq_dict = {}
+    for (noun, freq, genders, cases, nums) in freq_list:
+        freq_dict[noun] = (freq, genders, cases, nums)
     target_verb = check_input(input().strip(), current_mode)
     target_verb = target_verb.lower()
     keep_bigrams = []
     i = 0
-    n_bigrams = 2405703
+    n_bigrams = 2405703  # number of lines in bigram file
     with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
         for line in F:
             line = line.split('\t')
@@ -385,20 +389,18 @@ def bigram_search(freq_list, current_mode):
             if i % 100 == 0:
                 print(' Verb search: {:2.0%}'.format(i/n_bigrams), end='\r')
             bigram_count = line[0]
-            noun = line[1]
+            noun = line[1].title()  # .title() capitalizes the first letter
             noun_pos = line[2]
             verb = line[3]
             verb_pos = line[4]
             if verb == target_verb:
-                for n in freq_list:
-                    word = n[0]
-                    if noun == word.lower():  #TODO: lemmatize the noun?
-                        word_freq = n[1]
-                        genders = n[2]
-                        cases = n[3]
-                        nums = n[4]
-                        keep_bigrams.append((bigram_count, word, word_freq,
-                                             genders, cases, nums))
+                if noun in freq_dict.keys():
+                    freq = freq_dict[noun][0]
+                    genders = freq_dict[noun][1]
+                    cases = freq_dict[noun][2]
+                    nums = freq_dict[noun][3]
+                    keep_bigrams.append((bigram_count, noun, freq,
+                                         genders, cases, nums))
     # Print search results
     if len(keep_bigrams) > 0:
         print('\nOut of the {} search results, {} nouns can occur with \'{}\':'\
