@@ -1,15 +1,17 @@
 '''
-
-## Version that filters for inf. verbs by checking if a words ends with -n
-and only then uses spacy for POS-detection;
-uses a cutoff point for bigram minimal count ##
-
 7 September 2021
 Miriam Schulz
 mschulz@coli.uni-saarland.de
 
 This script extracts all bigrams of the form NOUN-VERB (or NOUN-AUX)
 from the deWaC lemma bigram list, to be further used for stimuli creation.
+
+To increase speed, the script first checks if the second lemma ends with -n;
+if yes, its POS tag is extracted using spaCy.
+Then, the POS tag of the first lemma is calculated, and if it is a NOUN,
+the bigram is added to the final list of NOUN-VERB bigrams.
+
+This version uses a cutoff value to exclude very rare bigrams of total count 1.
 
 USAGE: python bigram_extractor.py
 
@@ -39,14 +41,16 @@ SpaCy POS-tag set:
 
 import spacy
 
-def get_verb_bigrams(filename, cutoff_count):
+def get_verb_bigrams(filename, cutoff_value):
     '''
     Extracts bigrams from the deWaC corpus lemmatized bigram list.
     Keeps only bigrams that end with a verb and start with a noun.
-    If a cutoff_count larger than 0 is given as input, bigrams whose count
+    If a cutoff_value larger than 0 is given as input, bigrams whose count
     in the corpus is equal to or lower than this cutoff value will be skipped.
     '''
     print('Starting bigram extraction...')
+    print('(Extracting bigrams with a frequency of at least {})'\
+          .format(cutoff_value))
     with open(filename, 'r', encoding='utf-8') as F:
         i = 0
         keep_tags = ['AUX', 'VERB']
@@ -58,16 +62,23 @@ def get_verb_bigrams(filename, cutoff_count):
                     '5': 10417585,
                     '10': 5964572}
         n = 100852376  # total number of lines in bigram lemma file
-        if cutoff_count in cutoff_n.keys():
-            n = cutoff_n[cutoff_count]
+        if cutoff_value in cutoff_n.keys():
+            n = cutoff_n[cutoff_value]
         for line in F:
+            i += 1
+            if i % 1000 == 0:
+                print(' Progress: {:2.2%} (processed {} bigrams)'\
+                      .format(i/n, i), end='\r')
             line = line.split()
-            if len(line) >= 3:  # to avoid errors in case of empty lines
+            if len(line) >= 3:  # to avoid errors in case of incomplete lines
                 bigram_count = line[0]
                 lemma1 = line[1]
                 lemma2 = line[2]
-                if bigram_count == cutoff_count:
+                if bigram_count == cutoff_value:
                     break
+                # Alternatively, only process bigrams with this count:
+                # if not bigram_count == cutoff_value:
+                #     continue
                 if lemma2[-1] == 'n':  # superficial check for verb
                     lemma2_analysis = nlp(lemma2)[0]
                     lemma2_pos = lemma2_analysis.pos_
@@ -78,14 +89,6 @@ def get_verb_bigrams(filename, cutoff_count):
                             keep_bigrams.append((bigram_count,
                                                  lemma1, lemma1_pos,
                                                  lemma2, lemma2_pos))
-
-            i += 1
-            if i % 1000 == 0:
-                print(' Progress: {:2.2%} (processed {} bigrams)'\
-                      .format(i/n, i), end='\r')
-            # if i == 10000:
-            #     break
-
     print('\n\nProcessed all {} lines.'.format(i))
     print('\nFound {} NOUN-VERB bigrams.'.format(len(keep_bigrams)))
     return keep_bigrams
@@ -108,9 +111,9 @@ if __name__ == '__main__':
     nlp = spacy.load("de_core_news_sm", disable=["tok2vec", "parser", \
                      "attribute_ruler", "lemmatizer", "ner"])
 
-    # Extract bigrams up to a certain minimum frequency count
-    cutoff_count = '5'
-    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt', cutoff_count)
+    # Extract bigrams up to (but excluding) a certain minimum frequency count
+    cutoff_value = '1'  # '1' will process bigrams with a count > 1
+    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt', cutoff_value)
 
     # Write extracted bigrams to file
     outfilename = 'bigrams_noun_verb.tsv'
