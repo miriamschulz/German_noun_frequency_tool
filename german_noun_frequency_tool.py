@@ -18,7 +18,7 @@ anaconda3/lib/python3.6/site-packages/demorphy-1.0-py3.6.egg/demorphy/data/
 
 USAGE: python German_noun_frequency_tool.py
 
-MODE 1: similar target search (Search-by-Target)
+MODE 1: similar target search (Search-by-Noun)
 Input: a target word
 Searches for nouns that are similar to the input target word in frequency,
 length and morphological criteria (gender, case and numerus)
@@ -52,7 +52,7 @@ import os
 from demorphy import Analyzer
 
 
-def search_by_target():
+def search_by_noun():
 
     '''
     MODE 1: use an input noun to search for similar nouns
@@ -61,7 +61,7 @@ def search_by_target():
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
     current_mode = 1
-    print('{}Currently in MODE 1: Search-by-Target{}'.upper()\
+    print('{}Currently in MODE 1: Search-by-Noun{}'.upper()\
           .format(heading_col, reset_col))
     print('\nTo exit the program, type \'quit\' or \'q\' at any time.')
     print('To switch to Search-by-Frequency mode, press \'s\'.')
@@ -109,7 +109,7 @@ def search_by_freq():
     print('{}Currently in MODE 2: Search-by-Frequency{}'.upper()\
           .format(heading_col, reset_col))
     print('\nTo exit the program, type \'quit\' at any time.')
-    print('To switch to Search-by-Target mode, press \'s\'.')
+    print('To switch to Search-by-Noun mode, press \'s\'.')
     print('\n{}Please enter a number (int or float) for the desired '
           'search frequency (per million):{}'\
           .format(input_col, reset_col), end=' ')
@@ -349,7 +349,7 @@ def get_target_freq(target_word):
         if choice.lower() == 's':
             search_by_freq()
         else:
-            search_by_target()
+            search_by_noun()
 
 def get_target_morph(noun):
     '''
@@ -370,13 +370,13 @@ def bigram_search(freq_list, current_mode):
     Checks whether the nouns found in the main search occur with an
     input verb in the lemmatized deWaC bigram list
     '''
-    print('\n{}Please enter a target verb (infinitive) to check for '
+    print('\n{}Please enter a verb (infinitive) to check for '
           'co-occurrence with the retrieved nouns:{}'\
           .format(input_col, reset_col), end=' ')
     target_verb = check_input(input().strip(), current_mode)
     target_verb = target_verb.lower()
     keep_bigrams = []
-    with open('bigrams_noun_verb_12verbs.tsv', 'r', encoding='utf-8') as F:
+    with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
         for line in F:
             line = line.split('\t')
             bigram_count = line[0]
@@ -396,12 +396,13 @@ def bigram_search(freq_list, current_mode):
                                              genders, cases, nums))
     # Print search results
     if len(keep_bigrams) > 0:
-        print('\nOut of the {} search results, {} nouns can occur with \'{}\':\n'\
+        print('\nOut of the {} search results, {} nouns can occur with \'{}\':'\
               .format(len(freq_list), len(keep_bigrams), target_verb))
-        formatting_pattern = '{0: ^14}|{1: <25}|{2: ^13}|{3: ^20}|{4: ^20}|{5: ^12}'
-        print('\t' + formatting_pattern.format('BIGRAM COUNT', '           NOUN',
-                                               'FREQUENCY', 'GENDERS', 'CASES',
-                                               'NUMERUS'))
+        print()
+        formatting_pattern = '{0:^14}|{1:<25}|{2:^13}|{3:^20}|{4:^20}|{5:^12}'
+        print('\t'+formatting_pattern.format('BIGRAM COUNT', '           NOUN',
+                                             'FREQUENCY', 'GENDERS', 'CASES',
+                                             'NUMERUS'))
         print('\t' + '_'*109)
         j = 0
         for entry in keep_bigrams:
@@ -418,16 +419,16 @@ def bigram_search(freq_list, current_mode):
 
 def continue_options(current_mode, freq_list):
     if current_mode == 1:
-        current_search_mode = 'Search-by-Target'
+        current_search_mode = 'Search-by-Noun'
         other_search_mode = 'Search-by-Frequency'
     else:
-        current_search_mode = 'Search-by-Target'
+        current_search_mode = 'Search-by-Noun'
         other_search_mode = 'Search-by-Frequency'
     print('\nRun new {}: press {}Enter{}'\
           .format(current_search_mode, input_col, reset_col))
     print('Switch to {}: press {}\'s\'{}'\
           .format(other_search_mode, input_col, reset_col))
-    print('To check which of the nouns can follow a specific target verb:'
+    print('To check which of the nouns can follow a specific verb:'
           ' press {}\'v\'{}'.format(input_col, reset_col))
     print('To exit, type {}\'quit\' or \'q\'.{}'\
           .format(input_col, reset_col), end=' ')
@@ -437,7 +438,7 @@ def continue_options(current_mode, freq_list):
         if continue_input == '':
             flag = False
             if current_mode == 1:
-                search_by_target()
+                search_by_noun()
             else:
                 search_by_freq()
         elif continue_input == 'v':
@@ -460,7 +461,7 @@ def check_input(some_input, current_mode):
         if current_mode == 1:
             search_by_freq()
         elif current_mode == 2:
-            search_by_target()
+            search_by_noun()
     return some_input
 
 def main():
@@ -469,7 +470,7 @@ def main():
     '''
 
     # Select the search mode: target search or frequency search
-    print('\n{}Press \'1\' to enter Search-by-Target mode or press \'2\' to '
+    print('\n{}Press \'1\' to enter Search-by-Noun mode or press \'2\' to '
           'enter Search-by-Frequency mode:{}'.format(input_col, reset_col),
           end=' ')
     mode_input = check_input(input().strip(), None)
@@ -490,7 +491,7 @@ def main():
             mode_input = check_input(input().strip(), None)
 
     if search_mode == 1:
-        search_by_target()
+        search_by_noun()
     elif search_mode == 2:
         search_by_freq()
 

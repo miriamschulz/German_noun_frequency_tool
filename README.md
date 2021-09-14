@@ -29,7 +29,7 @@ A noun like 'Eichhörnchen', on the other hand, has a frequency of only 1.48 per
 ## Search extension: verb frames
 After completing a search, an additional function allows to further refine the search results by checking which of the retrieved nouns can occur as the object of a specific verb. To this end, the user enters an infinitive verb and the program checks which of the nouns found in the search can precede this verb. This is done by iterating through a list of all bigrams of the form NOUN-VERB that was constructed from the deWaC lemmatized bigram list (full bigram list downloaded from [here](https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists)).
 
-The rationale behind using bigrams of the form NOUN-VERB is that in German's underlying SOV order, the object can directly precede the verb. Note that the results will also include NOUN-VERB pairs in which the noun is for instance the subject and not the object of the verb, since German has an SVO order in main clauses. To improve this search feature in the future, the NOUN-VERB bigram list could be replaced with a list of verb complements derived from the syntactically annotated version of the corpus, [SdeWaC](https://www.ims.uni-stuttgart.de/en/research/resources/corpora/sdewac/).
+The rationale behind using bigrams of the form NOUN-VERB is that in German's underlying SOV order, the object can directly precede the verb. Currently, only lemmatized bigrams that occur at least two times in the deWaC corpus are considered. Note that the results will also include NOUN-VERB pairs in which the noun is for instance the subject and not the object of the verb, since German has an SVO order in main clauses. To improve this search feature in the future, the NOUN-VERB bigram list could be replaced with a list of verb complements derived from the syntactically annotated version of the corpus, [SdeWaC](https://www.ims.uni-stuttgart.de/en/research/resources/corpora/sdewac/).
 
 ## Usage
 
@@ -39,7 +39,7 @@ The rationale behind using bigrams of the form NOUN-VERB is that in German's und
 
 To run the code, check that the file `deWaC_freqlist.tsv` is downloaded to the same directory as the code file.
 
-In order to run the verb frame extension, the file `bigrams_noun_verb.tsv` should also be downloaded to the code directory.
+In order to run the verb frame extension, the file `bigrams_noun_verb_freq2+.tsv` should also be downloaded to the code directory.
 
 For the morphological analysis, [download and install DEMorphy](https://github.com/DuyguA/DEMorphy).
 Additionally, the [`words.dg`](https://github.com/DuyguA/DEMorphy/blob/master/demorphy/data/words.dg) file needs to be downloaded and stored in DEMorphy's data folder, e.g. under:
