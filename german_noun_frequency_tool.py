@@ -200,9 +200,9 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
                             freq_dict[word][freq]['numerus'] = set()
                             freq_dict = add_to_dict(freq_dict, word, freq,
                                                     gender, case, num)
+            i += 1
             if i % 1000 == 0:
                 print(' Progress: {:2.0%}'.format(i/n), end='\r')
-            i += 1
     # Transform the frequency dictionary to a list
     freq_list = []
     for word, f in freq_dict.items():
@@ -376,9 +376,14 @@ def bigram_search(freq_list, current_mode):
     target_verb = check_input(input().strip(), current_mode)
     target_verb = target_verb.lower()
     keep_bigrams = []
+    i = 0
+    n_bigrams = 2405703
     with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
         for line in F:
             line = line.split('\t')
+            i += 1
+            if i % 100 == 0:
+                print(' Verb search: {:2.0%}'.format(i/n_bigrams), end='\r')
             bigram_count = line[0]
             noun = line[1]
             noun_pos = line[2]
@@ -431,7 +436,7 @@ def continue_options(current_mode, freq_list):
     print('To check which of the nouns can follow a specific verb:'
           ' press {}\'v\'{}'.format(input_col, reset_col))
     print('To exit, type {}\'quit\' or \'q\'.{}'\
-          .format(input_col, reset_col), end=' ')
+          .format(input_col, reset_col))
     continue_input = check_input(input().strip().lower(), current_mode)
     flag = True
     while True:
