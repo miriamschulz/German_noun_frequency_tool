@@ -381,7 +381,7 @@ def bigram_search(freq_list, current_mode):
     target_verb = target_verb.lower()
     keep_bigrams = []
     i = 0
-    n_bigrams = 2405703  # number of lines in bigram file
+    n_bigrams = 3306296  # number of lines in bigram file (previously 2405703)
     with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
         for line in F:
             line = line.split('\t')
