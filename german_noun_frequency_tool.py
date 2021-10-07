@@ -18,9 +18,9 @@ anaconda3/lib/python3.6/site-packages/demorphy-1.0-py3.6.egg/demorphy/data/
 
 USAGE: python German_noun_frequency_tool.py
 
-MODE 1: similar target search (Search-by-Noun)
-Input: a target word
-Searches for nouns that are similar to the input target word in frequency,
+MODE 1: similar noun search (Search-by-Noun)
+Input: a noun
+Searches for nouns that are similar to the input word in frequency,
 length and morphological criteria (gender, case and numerus)
 
 MODE 2: frequency search (Search-by-Frequency)
@@ -29,7 +29,7 @@ Extracts all nouns with a similar frequency
 
 Search parameters (interactively adjustable, except for word frequency):
 - Word frequency:
-  Depending on the frequency of the input target word (MODE 1) or the
+  Depending on the frequency of the input noun (MODE 1) or the
   input frequency (MODE 2), words with compatible frequencies are returned.
   3 frequency classes are distinguished:
   * group 1: input_frequency >= 100: returns nouns with frequencies >= 100
@@ -37,9 +37,9 @@ Search parameters (interactively adjustable, except for word frequency):
     frequency difference of +- 5
   * group 3: input_frequency < 10: nouns with frequency difference of +- 1
 - Word length: Restricts the search to nouns similar in length to the input
-  target (in MODE 1). Default value for the length difference: 2
+  noun (in MODE 1). Default value for the length difference: 2
 - Morphological criteria: analysis of gender, case, numerus (using DEMorphy)
-- Results are sorted by increasing frequency difference from the input target
+- Results are sorted by increasing frequency difference from the input noun
 - An additional refinement of the search results allows the user to
   restrict the results to those nouns that can occur together with a specific
   verb (with occurrence here meaning that the count of the bigram NOUN + VERB
@@ -61,14 +61,19 @@ def start_search():
 
     os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
-    print('\t' + '-' * 26)
-    print('\t{}GERMAN NOUN FREQUENCY TOOL{}'.format(heading_col, reset_col))
-    print('\t' + '-' * 26, '\n')
+    print('{}GERMAN NOUN FREQUENCY TOOL{}\n'.format(heading_col, reset_col))
 
-    print('{}Please enter either a target word (e.g. Haus) \n'
-          'or a search frequency (int or float, e.g. 5.5):{}'\
-          .format(input_col, reset_col), end=' ')
+    print('{}Please enter either\n'
+          '- a noun (e.g. Haus), or\n'
+          '- a search frequency (int or float, e.g. 5.5){}'\
+          .format(input_col, reset_col))
     user_input = check_input(input().strip())
+    if user_input == '' or user_input == 'v' or user_input == 'c':
+        print('\n{}Please enter a valid noun or search frequency.\n'
+              'Press Enter to try again with another noun or frequency.{}'\
+              .format(warn_col, reset_col))
+        choice = check_input(input().strip())
+        start_search()
 
     # Differentiate between frequency and word input:
     try:
@@ -77,11 +82,12 @@ def start_search():
         genders = ['masc', 'fem', 'neut']
         length_min = 1
         length_max = 100
+        print('\nEntered search frequency: {} per million'.format(search_freq))
     except ValueError:
         target_word = user_input
         target_freq = get_target_freq(target_word)
         t_genders, t_cases, t_nums = get_target_morph(target_word)
-        print('\n\tChosen target: \t\t\'{}\''.format(target_word))
+        print('\nAnalysis of the input noun \'{}\':'.format(target_word))
         print('\tFrequency rank: \t{} per million'.format(target_freq))
         print('\tWord length: \t\t{} characters'.format(len(target_word)))
         print('\tPossible genders: \t{}'.format(', '.join(t_genders)))
@@ -100,6 +106,17 @@ def start_search():
     cases = ['dat', 'acc']
     numerus = ['sing']
 
+    # Print search criteria
+    print('\nThe automatically defined criteria for your search are:')
+    print('\t* Search frequency:\t', end='')
+    frequency_range(search_freq)
+    print('\t* Word length:\t\t{} to {} characters'\
+          .format(length_min, length_max))
+    print('\t* Gender(s):\t\t{}'.format(', '.join(genders)))
+    print('\t* Case(s):\t\t{}'.format(', '.join(cases)))
+    print('\t* Numerus:\t\t{}'.format(', '.join(numerus)))
+    print('{}\nPress \'c\' to change these criteria, otherwise press Enter.{}'
+          .format(input_col, reset_col))
     # Customize search
     genders, cases, numerus, length_min, length_max = \
         search_customization(genders, cases, numerus, length_min, length_max)
@@ -117,16 +134,7 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
     on the basis of the specified search criteria
     '''
 
-    print('''\nSearching for nouns...
-
-        Search criteria
-        * Search frequency: \t{} per million
-        * Word length: \t\t{} to {} characters
-        * Genders: \t\t{}
-        * Cases: \t\t{}
-        * Numerus: \t\t{}
-        '''.format(search_freq, length_min, length_max,
-                   '/'.join(genders), '/'.join(cases), '/'.join(numerus)))
+    print('\nSearching for nouns...')
 
     freq_dict = dict()
     with open('deWaC_freqlist.tsv', 'r', encoding='utf-8') as F:
@@ -215,29 +223,25 @@ def search_customization(genders, cases, numerus,
     possible_numbers = ['sing', 'plu']
     possible_genders = ['fem', 'masc', 'neut']
 
-    # Search customization
-    print('\nCustomize the search by changing the default ')
-    print('search gender(s) / case(s) / numerus / word length difference?')
-    print('{}Press \'y\' for yes, otherwise press Enter.{}'\
-          .format(input_col, reset_col), end=' ')
     choice_custom = check_input(input().strip().lower())
-    if choice_custom != 'y':
+    if choice_custom != 'c':
         return genders, cases, numerus, length_min, length_max
 
-    print('\n{}Type the desired word length range, gender(s), case(s) '
-          'and/or numerus.'
-          '\nSeparate each by a comma.{}'\
-          .format(input_col, reset_col))
-    print('\tOptions:')
+    print('\nSEARCH CUSTOMIZATION OPTIONS:')
     print('\t*  LENGTH RANGE:\te.g. \'8-10\' for words of '
           '8 to 10 characters in length')
     print('\t*  CASE:\t\tnom, gen, dat, acc')
     print('\t*  GENDER:\t\tmasc, fem, neut')
     print('\t*  NUMERUS:\t\tsing OR plu')
     print('\t*  Remove all search filters: simply type \'all\'')
-    print('(not all entries are required, e.g. it is possible to enter only '
-          '\'3-5, nom, gen\' \nto restrict the search to nominative and '
-          'genitive nouns with a word length \nof 3 to 5 characters.)')
+    print('(Not all entries are required; it is possible to enter only e.g.\n'
+          '\'3-5, masc, neut\' to restrict the search to masculine or neutrum\n'
+          'nouns with a word length of 3 to 5 characters.)')
+
+    print('\n{}Type the desired word length range, gender(s), case(s) '
+          'and/or numerus.'
+          '\nSeparate each entry by a comma.{}'\
+          .format(input_col, reset_col))
 
     custom_input = check_input(input().lower())
     customizations = [el.strip() for el in custom_input.split(',')]
@@ -273,7 +277,7 @@ def search_customization(genders, cases, numerus,
 
 def frequency_check(target_freq, freq):
     '''
-    Evaluates a noun's frequency against the frequency of the target word.
+    Evaluates a noun's frequency against the frequency of the target noun.
     Returns True if both input frequencies are in the same of 3 frequency
     groups, and therein, within a maximally allowed distance:
     * larger than 100 per million: any distance
@@ -293,6 +297,23 @@ def frequency_check(target_freq, freq):
                 return True
     return False
 
+def frequency_range(freq):
+    '''
+    Prints the frequency ranges for a search given an input search frequency
+    '''
+    if (freq < 10):
+        print('{} to {} per million'.format(freq-1, freq+1))
+    elif (freq >= 100):
+        print('100+ per million')
+    else:  # i.e., if 10 <= search_freq < 100
+        if freq-5 >= 10:
+            print('{} to {} per million'.format(freq-5, freq+5))
+        elif freq-1 < 10:
+            print('{} to {} per million'.format(freq-1, freq+5))
+        else:
+            print('{} to {} per million'.format(10.0, freq+5))
+    return
+
 def add_to_dict(freq_dict, word, freq, gender, case, num):
     freq_dict[word][freq]['gender'].add(gender)
     freq_dict[word][freq]['case'].add(case)
@@ -311,8 +332,8 @@ def get_target_freq(target_word):
             if word == target_word:
                 return freq
         # If no target word is found, try again:
-        print('\n{}Target word not found. '
-              'Press Enter to try again with another target or frequency.{}'\
+        print('\n{}Noun not found. '
+              'Press Enter to try again with another noun or frequency.{}'\
               .format(warn_col, reset_col))
         choice = check_input(input().strip())
         start_search()
@@ -353,7 +374,8 @@ def bigram_search(freq_list):
             line = line.split('\t')
             i += 1
             if i % 100 == 0:
-                print(' Verb search progress: {:2.0%}'.format(i/n_bigrams), end='\r')
+                print(' Verb search progress: {:2.0%}'\
+                      .format(i/n_bigrams), end='\r')
             bigram_count = line[0]
             noun = line[1].title()  # .title() capitalizes the first letter
             noun_pos = line[2]
@@ -429,12 +451,12 @@ if __name__ == '__main__':
 
     back_search = '\u001b[48;5;195m'  # light blue
     back_verbs = '\u001b[48;5;230m'   # light yellow
-    heading_col = '\u001b[30;1m'  # bright black
-    warn_col = '\u001b[31;1m'     # bright red
-    input_col = '\u001b[36;1m'    # bright cyan
-    sun_col = '\u001b[38;5;11m'   # bright pink
-    exit_col = '\u001b[35;1m'     # bright dark blue
-    reset_col = '\u001b[0m'
+    heading_col = '\u001b[30;1m'      # bright black
+    warn_col = '\u001b[31;1m'         # bright red
+    input_col = '\u001b[36;1m'        # bright cyan
+    sun_col = '\u001b[38;5;11m'       # bright pink
+    exit_col = '\u001b[35;1m'         # bright dark blue
+    reset_col = '\u001b[0m'           # reset to normal
 
     # os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
@@ -456,4 +478,5 @@ if __name__ == '__main__':
     # Initialize gender classifier and POS tagger
     analyzer=Analyzer(char_subs_allowed=True)
 
+    # Begin search
     start_search()
