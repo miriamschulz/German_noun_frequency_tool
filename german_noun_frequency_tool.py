@@ -6,13 +6,13 @@ mschulz@coli.uni-saarland.de
 Tool for stimuli creation
 Version 5 – interactive version for the German deWaC noun frequency list
 
-This script extracts singular nouns and their frequencies from the deWaC
+This script extracts nouns and their frequencies from the deWaC
 word frequency list downloaded from:
 https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists
 
 Nouns are morphologically analyzed using DEMorphy.
 Download DEMorphy from: https://github.com/DuyguA/DEMorphy
-To install, additionally download the words.dg file and store it
+To install DEMorphy, additionally download the words.dg file and store it
 in DEMorphy's data folder, e.g. under:
 anaconda3/lib/python3.6/site-packages/demorphy-1.0-py3.6.egg/demorphy/data/
 
@@ -21,10 +21,10 @@ USAGE: python German_noun_frequency_tool.py
 MODE 1: similar noun search (Search-by-Noun)
 Input: a noun
 Searches for nouns that are similar to the input word in frequency,
-length and morphological criteria (gender, case and numerus)
+length and morphological criteria (gender and numerus)
 
 MODE 2: frequency search (Search-by-Frequency)
-Input: a frequency (number)
+Input: a frequency (number: int or float)
 Extracts all nouns with a similar frequency
 
 Search parameters (interactively adjustable, except for word frequency):
@@ -302,16 +302,19 @@ def frequency_range(freq):
     Prints the frequency ranges for a search given an input search frequency
     '''
     if (freq < 10):
-        print('{} to {} per million'.format(freq-1, freq+1))
+        print('{} to {} per million'\
+              .format(max(round(freq-1, 2), 0), round(freq+1, 2)))
     elif (freq >= 100):
         print('100+ per million')
     else:  # i.e., if 10 <= search_freq < 100
         if freq-5 >= 10:
-            print('{} to {} per million'.format(freq-5, freq+5))
+            print('{} to {} per million'\
+                  .format(round(freq-5, 2), round(freq+5, 2)))
         elif freq-1 < 10:
-            print('{} to {} per million'.format(freq-1, freq+5))
+            print('{} to {} per million'\
+                  .format(round(freq-1, 2), round(freq+5, 2)))
         else:
-            print('{} to {} per million'.format(10.0, freq+5))
+            print('{} to {} per million'.format(10.0, round(freq+5, 2)))
     return
 
 def add_to_dict(freq_dict, word, freq, gender, case, num):
