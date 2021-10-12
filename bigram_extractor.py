@@ -41,7 +41,7 @@ SpaCy POS-tag set:
 
 import spacy
 
-def get_verb_bigrams(filename, cutoff_value):
+def get_verb_bigrams(filename, cutoff_value, verb):
     '''
     Extracts bigrams from the deWaC corpus lemmatized bigram list.
     Keeps only bigrams that end with a verb and start with a noun.
@@ -51,6 +51,8 @@ def get_verb_bigrams(filename, cutoff_value):
     print('Starting bigram extraction...')
     print('(Extracting bigrams with a frequency of more than {})'\
           .format(cutoff_value))
+    nlp = spacy.load("de_core_news_sm", disable=["tok2vec", "parser", \
+                     "attribute_ruler", "lemmatizer", "ner"])
     with open(filename, 'r', encoding='utf-8') as F:
         i = 0
         keep_tags = ['AUX', 'VERB']
@@ -79,10 +81,20 @@ def get_verb_bigrams(filename, cutoff_value):
                 # Alternatively, only process bigrams with this count:
                 # if not bigram_count == cutoff_value:
                 #     continue
-                if lemma2[-1] == 'n':  # superficial check for verb
-                    lemma2_analysis = nlp(lemma2)[0]
-                    lemma2_pos = lemma2_analysis.pos_
-                    if lemma2_pos in keep_tags:
+                if verb == None:
+                    if lemma2[-1] == 'n':  # superficial check for verb
+                        lemma2_analysis = nlp(lemma2)[0]
+                        lemma2_pos = lemma2_analysis.pos_
+                        if lemma2_pos in keep_tags:
+                            lemma1_analysis = nlp(lemma1)[0]
+                            lemma1_pos = lemma1_analysis.pos_
+                            if lemma1_pos == 'NOUN':
+                                keep_bigrams.append((bigram_count,
+                                                     lemma1, lemma1_pos,
+                                                     lemma2, lemma2_pos))
+                else:
+                    if lemma2 == verb:
+                        lemma2_pos = 'VERB'
                         lemma1_analysis = nlp(lemma1)[0]
                         lemma1_pos = lemma1_analysis.pos_
                         if lemma1_pos == 'NOUN':
@@ -108,12 +120,10 @@ def write_bigrams_to_file(bigrams, outfilename):
 
 if __name__ == '__main__':
 
-    nlp = spacy.load("de_core_news_sm", disable=["tok2vec", "parser", \
-                     "attribute_ruler", "lemmatizer", "ner"])
-
     # Extract bigrams up to (but excluding) a certain minimum frequency count
     cutoff_value = '1'  # '1' will process bigrams with a count > 1
-    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt', cutoff_value)
+    verb = None  # verbs can be entered in the extension file to this script
+    bigrams = get_verb_bigrams('de.lemma.bigrams.utf8.txt', cutoff_value, verb)
 
     # Write extracted bigrams to file
     outfilename = 'bigrams_noun_verb.tsv'
