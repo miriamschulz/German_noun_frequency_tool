@@ -363,15 +363,27 @@ def bigram_search(freq_list):
     print('\n{}Please enter a verb (infinitive) to check for '
           'co-occurrence with the retrieved nouns:{}'\
           .format(input_col, reset_col), end=' ')
+
     # Transform freq_list to dict for easy lookup:
     freq_dict = {}
     for (noun, freq, genders, cases, nums) in freq_list:
         freq_dict[noun] = (freq, genders, cases, nums)
     target_verb = check_input(input().strip())
+
+    # If no verb is entered, start again
+    if target_verb == '' or target_verb == 'v' or target_verb == 'c':
+        print('\n{}Input is not a verb.{}'\
+              .format(warn_col, reset_col))
+        continue_options(freq_list)
+
     target_verb = target_verb.lower()
     keep_bigrams = []
     i = 0
-    n_bigrams = 3306296  # number of lines in bigram file (previously 2405703)
+    # number of lines in bigram file (3306296) plus manually added bigrams
+    # (manually added verbs:
+    # öffnen, befestigen, eilen, schauen, herausholen, festhalten)
+    n_bigrams = 3306296 + 9981 + 3044 + 1567 + 2374 + 492 + 2813
+
     with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
         for line in F:
             line = line.split('\t')
