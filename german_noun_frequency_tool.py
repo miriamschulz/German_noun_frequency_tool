@@ -355,6 +355,37 @@ def get_target_morph(noun):
         numbers.append(x.numerus)
     return set(genders), set(cases), set(numbers)
 
+def read_verbs(filename):
+    '''
+    Pre-load the noun-verb bigrams and store them in a dictionary structure
+    for rapid access
+    '''
+    verb_dict = dict()
+    i = 0
+    # number of lines in bigram file (3306296) plus manually added bigrams
+    # (manually added verbs: öffnen, befestigen, eilen, schauen, herausholen,
+    # festhalten, schneiden, essen, besteigen, reingehen, hineingehen,
+    # aufschlagen, kochen
+    n_bigrams = 3306296 + 9981 + 3044 + 1567 + 2374 + 492 + 2813 + 1191 + 3808\
+                + 835 + 52 + 180 + 369 + 699
+    with open(filename, 'r', encoding='utf-8') as F:
+        for line in F:
+            line = line.split('\t')
+            i += 1
+            if i % 100 == 0:
+                print(' Reading in noun-verb bigrams. Progress: {:2.0%}'\
+                      .format(i/n_bigrams), end='\r')
+            bigram_count = line[0]
+            noun = line[1].title()
+            noun_pos = line[2]
+            verb = line[3]
+            verb_pos = line[4]
+            try:
+                verb_dict[verb].append((noun, bigram_count))
+            except:
+                verb_dict[verb] = [(noun, bigram_count)]
+    return verb_dict
+
 def bigram_search(freq_list):
     '''
     Checks whether the nouns found in the main search occur with an
@@ -369,6 +400,7 @@ def bigram_search(freq_list):
     for (noun, freq, genders, cases, nums) in freq_list:
         freq_dict[noun] = (freq, genders, cases, nums)
     target_verb = check_input(input().strip())
+    target_verb = target_verb.lower()
 
     # If no verb is entered, start again
     if target_verb == '' or target_verb == 'v' or target_verb == 'c':
@@ -376,54 +408,41 @@ def bigram_search(freq_list):
               .format(warn_col, reset_col))
         continue_options(freq_list)
 
-    target_verb = target_verb.lower()
     keep_bigrams = []
-    i = 0
-    # number of lines in bigram file (3306296) plus manually added bigrams
-    # (manually added verbs:
-    # öffnen, befestigen, eilen, schauen, herausholen, festhalten)
-    n_bigrams = 3306296 + 9981 + 3044 + 1567 + 2374 + 492 + 2813
-
-    with open('bigrams_noun_verb_freq2+.tsv', 'r', encoding='utf-8') as F:
-        for line in F:
-            line = line.split('\t')
-            i += 1
-            if i % 100 == 0:
-                print(' Verb search progress: {:2.0%}'\
-                      .format(i/n_bigrams), end='\r')
-            bigram_count = line[0]
-            noun = line[1].title()  # .title() capitalizes the first letter
-            noun_pos = line[2]
-            verb = line[3]
-            verb_pos = line[4]
-            if verb == target_verb:
-                if noun in freq_dict.keys():
-                    freq = freq_dict[noun][0]
-                    genders = freq_dict[noun][1]
-                    cases = freq_dict[noun][2]
-                    nums = freq_dict[noun][3]
-                    keep_bigrams.append((bigram_count, noun, freq,
-                                         genders, cases, nums))
-    # Print search results
-    if len(keep_bigrams) > 0:
-        print('{}Out of the {} search results, {} nouns can occur with \'{}\':'\
-              .format('\n'*2, len(freq_list), len(keep_bigrams), target_verb))
-        print()
-        formatting_pattern = '{0:^14}|{1:<25}|{2:^13}|{3:^20}|{4:^20}|{5:^12}'
-        print('\t'+formatting_pattern.format('BIGRAM COUNT', '           NOUN',
-                                             'FREQUENCY', 'GENDERS', 'CASES',
-                                             'NUMERUS'))
-        print('\t' + '_'*109)
-        j = 0
-        for entry in keep_bigrams:
-            line=formatting_pattern.format(*entry)
-            if j % 2 == 0:
-                print('\t{}{}{}'.format(back_verbs, line, reset_col))
-            else:
-                print('\t'+line)
-            j += 1
+    if target_verb in verb_dict.keys():
+        for (noun, bigram_count) in verb_dict[target_verb]:
+            if noun in freq_dict.keys():
+                freq = freq_dict[noun][0]
+                genders = freq_dict[noun][1]
+                cases = freq_dict[noun][2]
+                nums = freq_dict[noun][3]
+                keep_bigrams.append((bigram_count, noun, freq,
+                                     genders, cases, nums))
+        # Print search results
+        if len(keep_bigrams) > 0:
+            print('\n\nOut of the {} search results, {} nouns can occur with '
+                  '\'{}\':\n'\
+                  .format(len(freq_list), len(keep_bigrams), target_verb))
+            formatting_pattern='{0:^14}|{1:<25}|{2:^13}|{3:^20}|{4:^20}|{5:^12}'
+            print('\t'+formatting_pattern.format('BIGRAM COUNT',
+                                                 '           NOUN',
+                                                 'FREQUENCY', 'GENDERS',
+                                                 'CASES', 'NUMERUS'))
+            print('\t' + '_'*109)
+            j = 0
+            for entry in keep_bigrams:
+                line=formatting_pattern.format(*entry)
+                if j % 2 == 0:
+                    print('\t{}{}{}'.format(back_verbs, line, reset_col))
+                else:
+                    print('\t'+line)
+                j += 1
+        else:
+            print('\n{}None of the search nouns are attested with \'{}\'.{}'\
+                  .format(warn_col, target_verb, reset_col))
     else:
-        print('\n{}Found no nouns in the search that can occur with \'{}\'{}.'\
+        print('\n{}The verb {} is not present in the bigram file.\n'
+              'You can add it with the script bigram_extractor_manual.py.{}'\
               .format(warn_col, target_verb, reset_col))
     continue_options(freq_list)
 
@@ -475,23 +494,30 @@ if __name__ == '__main__':
 
     # os.system('cls' if os.name == 'nt' else 'clear')  # clear terminal
 
+    # Welcome message
     print('\n\n{}Welcome!{}'.format(heading_col, reset_col))
     print('{}  \\ /'.format(sun_col))
     print(' – o –')
     print('  / \\{}'.format(reset_col))
 
+    # Instructions / About
     print('\nThis program lets you search the deWaC German noun frequency list')
     print('(https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists')
     print('to find German nouns by their frequency, length, and')
     print('morphological criteria (gender, case and numerus).')
+    print('\nInitializing...')
 
+    # Initialize gender classifier and POS tagger
+    analyzer = Analyzer(char_subs_allowed=True)
+
+    # Read in the verb bigram lists
+    verb_dict = read_verbs('bigrams_noun_verb_freq2+.tsv')
+
+    # Start prompt
     print('\nTo exit the program, simply type \'quit\' or \'q\' '
           'followed by Enter at any point.')
     print('\nPress any key to start.')
     start = check_input(input().strip())
-
-    # Initialize gender classifier and POS tagger
-    analyzer=Analyzer(char_subs_allowed=True)
 
     # Begin search
     start_search()
