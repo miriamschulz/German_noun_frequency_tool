@@ -79,7 +79,7 @@ def start_search():
     try:
         search_freq = float(user_input)
         # Set search defaults
-        genders = ['masc', 'fem', 'neut']
+        genders = {'masc', 'fem', 'neut'}
         length_min = 1
         length_max = 100
         print('\nEntered search frequency: {} per million'.format(search_freq))
@@ -103,8 +103,8 @@ def start_search():
         search_freq = target_freq
 
     # Shared search defaults
-    cases = ['dat', 'acc']
-    numerus = ['sing']
+    cases = {'dat', 'acc'}
+    numerus = {'sing'}
 
     # Print search criteria
     print('\nThe automatically defined criteria for your search are:')
@@ -137,47 +137,38 @@ def main_search(search_freq, length_min, length_max, genders, cases, numerus):
     print('\nSearching for nouns...')
 
     freq_dict = dict()
-    with open('deWaC_freqlist.tsv', 'r', encoding='utf-8') as F:
-        i = 0
-        n = 1974122  # total lines in deWaC_freqlist.tsv
-        for line in F:
-            line=line.split()
-            word=line[0]
-            freq=float(line[1])
-            gender=line[3]
-            case=line[4]
-            num=line[5]
-            # Check frequency
-            freq_eval = frequency_check(search_freq, freq)
-            if freq_eval == True:
+    i = 0
+    n = len(noun_freq_dict.keys())
+    for freq, noundict in noun_freq_dict.items():
+        freq_eval = frequency_check(search_freq, freq)
+        if freq_eval == True:
+            for noun, morphinfo in noundict.items():
                 # Check length
-                if length_min <= len(word) <= length_max:
-                    # Check morphological criteria
-                    if (gender in genders) and \
-                       (num in numerus) and \
-                       (case in cases):
-                        if word in freq_dict.keys():
-                            if freq in freq_dict[word].keys():
-                                freq_dict = add_to_dict(freq_dict, word, freq,
-                                                        gender, case, num)
+                if length_min <= len(noun) <= length_max:
+                    # Check for overlap of morphological criteria
+                    noun_genders = morphinfo['gender']
+                    noun_cases = morphinfo['case']
+                    noun_num = morphinfo['numerus']
+                    shared_genders = genders & noun_genders
+                    shared_cases = cases & noun_cases
+                    shared_nums = numerus & noun_num
+                    # Update the frequency dictionary if any overlap is found
+                    if shared_genders and shared_cases and shared_nums:
+                        if noun in freq_dict.keys():
+                            if freq in freq_dict[noun].keys():
+                                print("DUPLICATE")
                             else:
-                                freq_dict[word][freq] = dict()
-                                freq_dict[word][freq]['gender'] =  set()
-                                freq_dict[word][freq]['case'] = set()
-                                freq_dict[word][freq]['numerus'] = set()
-                                freq_dict = add_to_dict(freq_dict, word, freq,
-                                                        gender, case, num)
+                                freq_dict[noun][freq]={'gender':shared_genders,
+                                                       'case':shared_cases,
+                                                       'numerus':shared_nums}
                         else:
-                            freq_dict[word] = dict()
-                            freq_dict[word][freq] = dict()
-                            freq_dict[word][freq]['gender'] =  set()
-                            freq_dict[word][freq]['case'] = set()
-                            freq_dict[word][freq]['numerus'] = set()
-                            freq_dict = add_to_dict(freq_dict, word, freq,
-                                                    gender, case, num)
-            i += 1
-            if i % 1000 == 0:
-                print(' Noun search progress: {:2.0%}'.format(i/n), end='\r')
+                            freq_dict[noun] = dict()
+                            freq_dict[noun][freq]={'gender':shared_genders,
+                                                   'case':shared_cases,
+                                                   'numerus':shared_nums}
+        i += 1
+        if i % 1000 == 0:
+            print(' Noun search progress: {:2.0%}'.format(i/n), end='\r')
 
     # Transform the frequency dictionary to a list
     freq_list = []
@@ -219,9 +210,9 @@ def search_customization(genders, cases, numerus,
     (e.g. search only for plural nouns)
     '''
 
-    possible_cases = ['nom', 'gen', 'dat', 'acc']
-    possible_numbers = ['sing', 'plu']
-    possible_genders = ['fem', 'masc', 'neut']
+    possible_cases = {'nom', 'gen', 'dat', 'acc'}
+    possible_numbers = {'sing', 'plu'}
+    possible_genders = {'fem', 'masc', 'neut'}
 
     choice_custom = check_input(input().strip().lower())
     if choice_custom != 'c':
@@ -249,9 +240,9 @@ def search_customization(genders, cases, numerus,
     if 'all' in customizations:
         return possible_genders, possible_cases, possible_numbers, 1, 100
 
-    new_cases = []
-    new_genders = []
-    new_numbers = []
+    new_cases = set()
+    new_genders = set()
+    new_numbers = set()
     for entry in customizations:
         if '-' in entry:
             length_min, length_max = entry.split('-')
@@ -261,16 +252,16 @@ def search_customization(genders, cases, numerus,
             except:
                 pass
         elif entry in possible_cases:
-            new_cases.append(entry)
+            new_cases.add(entry)
         elif entry in possible_numbers:
-            new_numbers.append(entry)
+            new_numbers.add(entry)
         elif entry in possible_genders:
-            new_genders.append(entry)
-    if new_cases != []:
+            new_genders.add(entry)
+    if new_cases != set():
         cases = new_cases
-    if new_genders != []:
+    if new_genders != set():
         genders = new_genders
-    if new_numbers != []:
+    if new_numbers != set():
         numerus = new_numbers
 
     return genders, cases, numerus, length_min, length_max
@@ -317,11 +308,49 @@ def frequency_range(freq):
             print('{} to {} per million'.format(10.0, round(freq+5, 2)))
     return
 
-def add_to_dict(freq_dict, word, freq, gender, case, num):
-    freq_dict[word][freq]['gender'].add(gender)
-    freq_dict[word][freq]['case'].add(case)
-    freq_dict[word][freq]['numerus'].add(num)
-    return freq_dict
+def add_to_dict(noun_freq_dict, freq, noun, gender, case, num, create):
+    if create == True:
+        noun_freq_dict[freq][noun] = dict()
+        noun_freq_dict[freq][noun]['gender'] = set()
+        noun_freq_dict[freq][noun]['case'] = set()
+        noun_freq_dict[freq][noun]['numerus'] = set()
+    noun_freq_dict[freq][noun]['gender'].add(gender)
+    noun_freq_dict[freq][noun]['case'].add(case)
+    noun_freq_dict[freq][noun]['numerus'].add(num)
+    return noun_freq_dict
+
+def read_nouns(filename):
+    '''
+    Pre-load the nouns and store them in a dictionary structure
+    for rapid access
+    '''
+    noun_freq_dict = dict()
+    with open(filename, 'r', encoding='utf-8') as F:
+        i = 0
+        n = 1974122  # total lines in deWaC_freqlist.tsv
+        for line in F:
+            line=line.split()
+            noun=line[0]
+            freq=float(line[1])
+            gender=line[3]
+            case=line[4]
+            num=line[5]
+            if freq in noun_freq_dict.keys():
+                if noun in noun_freq_dict[freq].keys():
+                    noun_freq_dict = add_to_dict(noun_freq_dict, freq, noun,
+                                                 gender, case, num, False)
+                else:
+                    noun_freq_dict = add_to_dict(noun_freq_dict, freq, noun,
+                                                 gender, case, num, True)
+            else:
+                noun_freq_dict[freq] = dict()
+                noun_freq_dict = add_to_dict(noun_freq_dict, freq, noun,
+                                             gender, case, num, True)
+            i += 1
+            if i % 1000 == 0:
+                print(' (1/2) Reading in nouns. Progress: {:2.0%}'\
+                      .format(i/n), end='\r')
+    return noun_freq_dict
 
 def get_target_freq(target_word):
     '''
@@ -346,20 +375,21 @@ def get_target_morph(noun):
     Extracts the possible genders, cases and numbers of the input target word
     '''
     s = analyzer.analyze(noun)
-    genders = []
-    cases = []
-    numbers = []
+    genders = set()
+    cases = set()
+    numbers = set()
     for x in s:
-        genders.append(x.gender)
-        cases.append(x.case)
-        numbers.append(x.numerus)
-    return set(genders), set(cases), set(numbers)
+        genders.add(x.gender)
+        cases.add(x.case)
+        numbers.add(x.numerus)
+    return genders, cases, numbers
 
 def read_verbs(filename):
     '''
     Pre-load the noun-verb bigrams and store them in a dictionary structure
     for rapid access
     '''
+    print()
     verb_dict = dict()
     i = 0
     # number of lines in bigram file (3306296) plus manually added bigrams
@@ -373,7 +403,7 @@ def read_verbs(filename):
             line = line.split('\t')
             i += 1
             if i % 100 == 0:
-                print(' Reading in noun-verb bigrams. Progress: {:2.0%}'\
+                print(' (2/2) Reading in noun-verb bigrams. Progress: {:2.0%}'\
                       .format(i/n_bigrams), end='\r')
             bigram_count = line[0]
             noun = line[1].title()
@@ -442,7 +472,7 @@ def bigram_search(freq_list):
                   .format(warn_col, target_verb, reset_col))
     else:
         print('\n{}The verb {} is not present in the bigram file.\n'
-              'You can add it with the script bigram_extractor_manual.py.{}'\
+              'To add it, use the script bigram_extractor_manual.py.{}'\
               .format(warn_col, target_verb, reset_col))
     continue_options(freq_list)
 
@@ -505,18 +535,22 @@ if __name__ == '__main__':
     print('(https://wacky.sslmit.unibo.it/doku.php?id=frequency_lists')
     print('to find German nouns by their frequency, length, and')
     print('morphological criteria (gender, case and numerus).')
-    print('\nInitializing...')
+    print('\nInitializing, please wait...')
 
     # Initialize gender classifier and POS tagger
     analyzer = Analyzer(char_subs_allowed=True)
 
-    # Read in the verb bigram lists
+    # Read in the verb bigram file and the noun file
+    noun_freq_dict = read_nouns('deWaC_freqlist.tsv')
     verb_dict = read_verbs('bigrams_noun_verb_freq2+.tsv')
 
     # Start prompt
-    print('\nTo exit the program, simply type \'quit\' or \'q\' '
-          'followed by Enter at any point.')
-    print('\nPress any key to start.')
+    print('\n\n{}Finished initialization. Press Enter to start.{}'\
+          .format(input_col, reset_col))
+    print('\n{}To exit the program, simply type \'quit\' or \'q\' '
+          'followed by Enter at any point.{}'\
+          .format(exit_col, reset_col))
+
     start = check_input(input().strip())
 
     # Begin search
